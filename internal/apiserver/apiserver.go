@@ -2,9 +2,11 @@ package apiserver
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/avg73/realworld-go-api/internal/config"
 	"github.com/avg73/realworld-go-api/internal/logger"
+	"github.com/avg73/realworld-go-api/internal/router"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
@@ -19,13 +21,21 @@ func New(c *config.Config) *APIServer {
 	return &APIServer{
 		config: c,
 		logger: logrus.New(),
+		router: mux.NewRouter(),
 	}
 }
 
-func (s *APIServer) Start() {
-	err := logger.ConfigureLogger(s.logger, s.config.LogLevel)
+func (a *APIServer) Start() {
+	err := logger.ConfigureLogger(a.logger, a.config.LogLevel)
 	if err != nil {
 		log.Fatal("logger configure error: ", err)
 	}
-	s.logger.Info("starting api server")
+
+	err = router.ConfigureRouter(a.router)
+	if err != nil {
+		log.Fatal("router configure error: ", err)
+	}
+
+	a.logger.Info("starting api server")
+	http.ListenAndServe(a.config.BindAddr, a.router)
 }
